@@ -30,61 +30,82 @@ async def criar_sessao(evento_id: str, sessao: Sessao, engine: AIOEngine = Depen
 # Listar sessões
 @router.get("/", response_model=list[Sessao])
 async def listar_sessoes(engine: AIOEngine = Depends(get_engine), limit: int = 10, offset: int = 0):
-    sessoes = await engine.find(Sessao, skip=offset, limit=limit)
-    return sessoes
+    try:
+        sessoes = await engine.find(Sessao, skip=offset, limit=limit)
+        return sessoes
+    except Exception as e:
+        print(f"Erro ao listar sessões: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao listar sessões")
+
 
 # Obter sessão por ID
 @router.get("/{sessao_id}", response_model=Sessao)
 async def obter_sessao(sessao_id: str, engine: AIOEngine = Depends(get_engine)):
-    if not ObjectId.is_valid(sessao_id):
-        raise HTTPException(status_code=400, detail="ID da sessão inválido")
-    
-    sessao = await engine.find_one(Sessao, Sessao.id == ObjectId(sessao_id))
+    try:
+        if not ObjectId.is_valid(sessao_id):
+            raise HTTPException(status_code=400, detail="ID da sessão inválido")
 
-    if not sessao:
-        raise HTTPException(status_code=404, detail="Sessão não encontrada")
+        sessao = await engine.find_one(Sessao, Sessao.id == ObjectId(sessao_id))
 
-    return sessao
+        if not sessao:
+            raise HTTPException(status_code=404, detail="Sessão não encontrada")
+
+        return sessao
+    except Exception as e:
+        print(f"Erro ao obter sessão: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao obter sessão")
+
 
 @router.put("/{sessao_id}", response_model=Sessao)
 async def atualizar_sessao(sessao_id: str, sessao: SessaoUpdate, engine: AIOEngine = Depends(get_engine)):
-    db_sessao = await engine.find_one(Sessao, Sessao.id == ObjectId(sessao_id))
-    if not db_sessao:
-        raise HTTPException(status_code=404, detail="Sessão não encontrada")
+    try:
+        db_sessao = await engine.find_one(Sessao, Sessao.id == ObjectId(sessao_id))
+        if not db_sessao:
+            raise HTTPException(status_code=404, detail="Sessão não encontrada")
 
-    update_data = sessao.dict(exclude_unset=True)  
-    for key, value in update_data.items():
-        setattr(db_sessao, key, value)
+        update_data = sessao.dict(exclude_unset=True)  
+        for key, value in update_data.items():
+            setattr(db_sessao, key, value)
 
-    await engine.save(db_sessao)
-    return db_sessao
+        await engine.save(db_sessao)
+        return db_sessao
+    except Exception as e:
+        print(f"Erro ao atualizar sessão: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao atualizar sessão")
 
 
 # Deletar sessão
 @router.delete("/{sessao_id}")
 async def deletar_sessao(sessao_id: str, engine: AIOEngine = Depends(get_engine)):
-    if not ObjectId.is_valid(sessao_id):
-        raise HTTPException(status_code=400, detail="ID da sessão inválido")
-    
-    sessao = await engine.find_one(Sessao, Sessao.id == ObjectId(sessao_id))
-    if not sessao:
-        raise HTTPException(status_code=404, detail="Sessão não encontrada")
+    try:
+        if not ObjectId.is_valid(sessao_id):
+            raise HTTPException(status_code=400, detail="ID da sessão inválido")
+        
+        sessao = await engine.find_one(Sessao, Sessao.id == ObjectId(sessao_id))
+        if not sessao:
+            raise HTTPException(status_code=404, detail="Sessão não encontrada")
 
-    await engine.delete(sessao)
-    return {"message": "Sessão deletada com sucesso"}
-
+        await engine.delete(sessao)
+        return {"message": "Sessão deletada com sucesso"}
+    except Exception as e:
+        print(f"Erro ao deletar sessão: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao deletar sessão")
 
 
 @router.get("/palestrante/eventos/{palestrante_id}", response_model=list[Evento])
 async def obter_eventos_por_palestrante(palestrante_id: str, engine: AIOEngine = Depends(get_engine)):
-    if not ObjectId.is_valid(palestrante_id):
-        raise HTTPException(status_code=400, detail="ID do palestrante inválido")
+    try:
+        if not ObjectId.is_valid(palestrante_id):
+            raise HTTPException(status_code=400, detail="ID do palestrante inválido")
     
-    palestrante_id = ObjectId(palestrante_id)
+        palestrante_id = ObjectId(palestrante_id)
 
-    eventos = await engine.find(Evento, {"sessoes.palestrante_id": palestrante_id})
+        eventos = await engine.find(Evento, {"sessoes.palestrante_id": palestrante_id})
 
-    if not eventos:
-        raise HTTPException(status_code=404, detail="Nenhum evento encontrado para este palestrante")
+        if not eventos:
+            raise HTTPException(status_code=404, detail="Nenhum evento encontrado para este palestrante")
 
-    return eventos
+        return eventos
+    except Exception as e:
+        print(f"Erro ao obter eventos por palestrante: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao obter eventos por palestrante")

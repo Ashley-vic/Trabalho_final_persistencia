@@ -4,8 +4,6 @@ from datetime import datetime
 from bson import ObjectId
 from .sessao import Sessao
 
-
-
 class Evento(Model):
     nome: str
     data_inicio: datetime
@@ -14,7 +12,6 @@ class Evento(Model):
     descricao: str
     sessoes: List[Sessao] = [] 
     participantes_ids: List[ObjectId] = []  
-
 
 class EventoUpdate(Model):
     nome: Optional[str] = None

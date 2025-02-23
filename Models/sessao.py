@@ -3,8 +3,6 @@ from typing import Optional, List
 from datetime import datetime
 from bson import ObjectId
 
-
-
 class Sessao(Model):
     nome: str
     data_hora: datetime
