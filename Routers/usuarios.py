@@ -1,0 +1,59 @@
+from fastapi import APIRouter, HTTPException, Depends
+from odmantic import AIOEngine
+from bson import ObjectId
+from typing import List
+from pydantic import BaseModel
+from Database.Database import get_engine  
+from Models.usuario import Usuario, UsuarioUpdate
+
+router = APIRouter()
+
+
+@router.post("/", response_model=Usuario)
+async def criar_usuario(usuario: Usuario, engine: AIOEngine = Depends(get_engine)):
+    try:
+        await engine.save(usuario)
+        return usuario
+    except Exception as e:
+        print(f"Erro ao criar usuario: {e}")
+
+@router.get("/", response_model=List[Usuario])
+async def listar_usuarios(engine: AIOEngine = Depends(get_engine)):
+    usuarios = await engine.find(Usuario)
+    return usuarios
+
+@router.get("/{usuario_id}", response_model=Usuario)
+async def obter_usuario(usuario_id: str, engine: AIOEngine = Depends(get_engine)):
+    if not ObjectId.is_valid(usuario_id):
+        raise HTTPException(status_code=400, detail="ID inválido")
+    usuario = await engine.find_one(Usuario, Usuario.id == ObjectId(usuario_id))
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    return Usuario(id=str(usuario.id), **usuario.dict())
+
+@router.put("/{usuario_id}", response_model=Usuario)
+async def atualizar_usuario(usuario_id: str, usuario: UsuarioUpdate, engine: AIOEngine = Depends(get_engine)):
+    db_usuario = await engine.find_one(Usuario, Usuario.id == ObjectId(usuario_id))
+    if not db_usuario:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    update_data = usuario.dict(exclude_unset=True)  
+    for key, value in update_data.items():
+        setattr(db_usuario, key, value)
+
+    await engine.save(db_usuario)
+    return db_usuario
+
+
+@router.delete("/{usuario_id}", status_code=204)
+async def deletar_usuario(usuario_id: str, engine: AIOEngine = Depends(get_engine)):
+    if not ObjectId.is_valid(usuario_id):
+        raise HTTPException(status_code=400, detail="ID inválido")
+
+    usuario = await engine.find_one(Usuario, Usuario.id == ObjectId(usuario_id))
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    await engine.delete(usuario)  
+
+    return {"message": "Usuário deletado com sucesso"}
