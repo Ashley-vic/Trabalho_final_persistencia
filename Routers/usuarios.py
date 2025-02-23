@@ -14,14 +14,6 @@ async def criar_usuario(usuario: Usuario, engine: AIOEngine = Depends(get_engine
         await engine.save(usuario)
         return usuario
     except Exception as e:
-        print(f"Erro ao criar usuario: {e}")
-
-@router.post("/", response_model=Usuario)
-async def criar_usuario(usuario: Usuario, engine: AIOEngine = Depends(get_engine)):
-    try:
-        await engine.save(usuario)
-        return usuario
-    except Exception as e:
         print(f"Erro ao criar usuário: {e}")
         raise HTTPException(status_code=500, detail="Erro ao criar usuário")
 
