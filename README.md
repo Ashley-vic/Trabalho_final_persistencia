@@ -4,6 +4,7 @@
 ## 🚀 Diagrama de Classes 
 ```mermaid
 classDiagram
+    direction LR
     class Usuario {
         +string nome
         +string email
